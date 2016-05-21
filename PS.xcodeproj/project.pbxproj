@@ -80,11 +80,11 @@
 			isa = PBXGroup;
 			children = (
 				63C14B181CB14DBE001A6996 /* AdaugareConferintaController.swift */,
-				63C14B291CB429E6001A6996 /* TalkController.swift */,
 				6369E2BA1CB1359D0094081B /* AdminController.swift */,
 				633483731CAF10D5003B2072 /* CreateAccountViewController.swift */,
 				63C14B1F1CB17544001A6996 /* DaysController.swift */,
 				633483711CAF10C6003B2072 /* LoginViewController.swift */,
+				63C14B291CB429E6001A6996 /* TalkController.swift */,
 				63C14B231CB41A35001A6996 /* TracksController.swift */,
 				6369E2BC1CB135AB0094081B /* UserController.swift */,
 			);

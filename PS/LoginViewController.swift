@@ -13,6 +13,7 @@ class LoginViewController: UIViewController {
     @IBOutlet weak var passwordTextField: UITextField!
     @IBOutlet weak var mailTextField: UITextField!
     @IBOutlet weak var logoutButton: UIButton!
+    var email: String!
     
     
     override func viewDidLoad() {
@@ -48,7 +49,7 @@ class LoginViewController: UIViewController {
     
     @IBAction func loginAction(sender: AnyObject) {
         
-        let email = self.mailTextField.text
+        self.email = self.mailTextField.text
         let password = self.passwordTextField.text
         
         if email != "" && password != ""
@@ -59,9 +60,9 @@ class LoginViewController: UIViewController {
                 NSUserDefaults.standardUserDefaults().setValue(authData.uid, forKey: "uid")
                 
                 
-                if email == "admin@admin.ro"
+                if self.email == "admin@admin.ro"
                 {
-                    self.performSegueWithIdentifier("adminSegue", sender: nil)
+                    self.performSegueWithIdentifier("userSegue", sender: nil)
                 }
                 else{
                     self.performSegueWithIdentifier("userSegue", sender: nil)
@@ -88,6 +89,12 @@ class LoginViewController: UIViewController {
         }
         
         
+    }
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        if segue.identifier == "userSegue"{
+            let vc = segue.destinationViewController as! UserController
+            vc.email = self.email
+    }
     }
     
     @IBAction func logoutAction(sender: AnyObject)

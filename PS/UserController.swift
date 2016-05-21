@@ -10,12 +10,24 @@ import UIKit
 import Firebase
 
 
-class UserController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class UserController: UIViewController, UITableViewDataSource, UITableViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     @IBOutlet weak var tableView: UITableView!
     var ref = Firebase(url: "https://ps-radu.firebaseio.com/conferences")
+    var imageRef = Firebase(url: "https://ps-radu.firebaseio.com/imagini/")
+    var bileteeRef = Firebase(url: "https://ps-radu.firebaseio.com/bilete")
     var texts = [""]
     let refreshControl: UIRefreshControl = UIRefreshControl()
+    var email: String!
+    var items = [NSDictionary]()
+    
+    @IBOutlet weak var addOutlet: UIButton!
+    @IBOutlet weak var welcomeLbl: UILabel!
+    @IBOutlet weak var nameLbl: UILabel!
+    @IBOutlet weak var imageOutlet: UIImageView!
+    @IBOutlet weak var addImageOutlet: UIButton!
+    @IBOutlet weak var reportButton: UIButton!
+    
     
     
     
@@ -24,6 +36,18 @@ class UserController: UIViewController, UITableViewDataSource, UITableViewDelega
        self.texts.removeAll()
         refreshControl.addTarget(self, action: "uiRefreshControlAction", forControlEvents: .ValueChanged)
         self.tableView.addSubview(refreshControl)
+        uiRefreshControlAction()
+        if self.email == "admin@admin.ro"{
+            self.addOutlet.hidden = false
+            self.nameLbl.text = "admin"
+            self.reportButton.hidden = false
+        }
+        else{
+            self.addOutlet.hidden = true
+            self.nameLbl.text = self.email
+            self.reportButton.hidden = true
+        }
+        
         // Do any additional setup after loading the view.
     }
     
@@ -84,17 +108,104 @@ class UserController: UIViewController, UITableViewDataSource, UITableViewDelega
             let newRefString = "https://ps-radu.firebaseio.com/conferences/"+"\(texts[indexPath.row])"
             let vc = segue.destinationViewController as! DaysController
             vc.refString = newRefString
-            
+            vc.email = self.email
             vc.title = self.texts[indexPath.row]
             
         }
     }
     
     
+
+    @IBAction func addAction(sender: AnyObject) {
+        let alertController = UIAlertController(title: "Adaugare", message: "Conferinta", preferredStyle: .Alert)
+        let addActionAlert = UIAlertAction(title: "Adaugare", style: .Default){ (_) in
+            let conferintaTextField = alertController.textFields![0] as UITextField
+            let nrBileteTextField = alertController.textFields![1] as UITextField
+            let pretBiletTextField = alertController.textFields![2] as UITextField
+            let conferintaText = conferintaTextField.text
+            let nrBileteText = nrBileteTextField.text
+            let pretBileteText = pretBiletTextField.text
+            if conferintaText != "" && nrBileteText != "" && pretBileteText != ""{
+                self.ref.childByAppendingPath(conferintaText).setValue(conferintaText)
+                let newref = Firebase(url: "https://ps-radu.firebaseio.com/conferences/"+conferintaText!)
+                newref.childByAppendingPath("NumarBilete").setValue(nrBileteText)
+                newref.childByAppendingPath("PretBilet").setValue(pretBileteText)
+                
+            }
+            
+        }
+        addActionAlert.enabled = false
+        let cancelAction = UIAlertAction(title: "Cancel", style: .Cancel) { (_) in }
+        
+        alertController.addTextFieldWithConfigurationHandler { (textField) in
+            textField.placeholder = "Conferinta"
+            
+            NSNotificationCenter.defaultCenter().addObserverForName(UITextFieldTextDidChangeNotification, object: textField, queue: NSOperationQueue.mainQueue()) { (notification) in
+                addActionAlert.enabled = textField.text != ""
+            }
+        }
+        
+        alertController.addTextFieldWithConfigurationHandler{(textField) in
+            textField.placeholder = "Numar Bilete"
+        }
+        alertController.addTextFieldWithConfigurationHandler{(textField) in
+            textField.placeholder = "Pret bilet"
+        }
+
+        alertController.addAction(addActionAlert)
+        alertController.addAction(cancelAction)
+        self.presentViewController(alertController, animated: true,completion: nil)
+        
+    }
+    
+    func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
+        let indexPath1 = indexPath.row-1
+        if editingStyle == UITableViewCellEditingStyle.Delete{
+            texts.removeAtIndex(indexPath1)
+            print(texts[indexPath1])
+            let refRemove = Firebase(url: "https://ps-radu.firebaseio.com/conferences/"+"\(texts[indexPath1])")
+            refRemove.removeValue()
+            tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: UITableViewRowAnimation.Automatic)
+            self.texts.removeAll()
+        }
+    }
+    
     @IBAction func logoutAction(sender: AnyObject) {
         CURRENT_USER.unauth()
         
         NSUserDefaults.standardUserDefaults().setValue(nil, forKey: "uid")
     }
+    @IBAction func addImageAction(sender: AnyObject) {
+        let myPicker = UIImagePickerController()
+        myPicker.delegate = self
+        myPicker.sourceType = UIImagePickerControllerSourceType.PhotoLibrary
+        self.presentViewController(myPicker, animated : true, completion: nil)
+        
+    }
+    func imagePickerController(picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : AnyObject]) {
+        imageOutlet.image = info[UIImagePickerControllerOriginalImage] as? UIImage
+        imageOutlet.backgroundColor = UIColor.clearColor()
+        
+        self.dismissViewControllerAnimated(true, completion: nil)
+    }
+    func imagePickerControllerDidCancel(picker: UIImagePickerController) {
+        self.dismissViewControllerAnimated(true, completion: nil)
+    }
+    
+    @IBAction func reportAction(sender: AnyObject) {
+        bileteeRef.observeSingleEventOfType(.Value, withBlock: {snap in
+            var tempItems = [NSDictionary]()
+            for item in snap.children {
+                let child = item as! FDataSnapshot
+                let dict = child.value as! NSDictionary
+                tempItems.append(dict)
+            }
+            self.items = tempItems
+        })
+        
+        
+    }
+    
+    
 
 }
